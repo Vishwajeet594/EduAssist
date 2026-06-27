@@ -45,6 +45,63 @@ const upsertVectors = async (vectors) => {
   }
 };
 
+const processUploadedPdf = async ({
+  pdfBuffer,
+  title,
+  fileUrl,
+  documentId
+}) => {
+  const docs = [];
+  const vectors = [];
+
+  const extracted = await extractPdfText(pdfBuffer);
+  const chunks = chunkText(extracted.text).map(safeText).filter(Boolean);
+
+  for (let i = 0; i < chunks.length; i += 1) {
+    const chunk = chunks[i];
+    const embedding = await getEmbedding(chunk);
+    const id = buildChunkId(title, documentId, i);
+
+    docs.push({
+      title,
+      fileUrl,
+      documentId,
+      chunk,
+      embedding
+    });
+
+    vectors.push({
+      id,
+      values: embedding,
+      metadata: {
+        text: chunk,
+        title,
+        documentId
+      }
+    });
+  }
+
+  await DocumentChunk.deleteMany({ documentId });
+
+  if (docs.length) {
+    await DocumentChunk.insertMany(docs);
+  } else {
+    await DocumentChunk.insertMany([
+      {
+        title,
+        fileUrl,
+        documentId,
+        chunk: "",
+        embedding: []
+      }
+    ]);
+  }
+
+  if (vectors.length) {
+    await upsertVectors(vectors);
+  }
+};
+
 const extractPdfText = async (buffer) => {
   const errors = [];
 
@@ -82,67 +139,35 @@ const uploadPdf = async (req, res) => {
     const documentId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const title = req.file.originalname;
     const fileUrl = `/uploads/${req.file.filename}`;
-    const docs = [];
-    const vectors = [];
-    let chunks = [];
-    let parseWarning = "";
-
-    try {
-      const extracted = await extractPdfText(pdfBuffer);
-      chunks = chunkText(extracted.text).map(safeText).filter(Boolean);
-
-      if (chunks.length) {
-        for (let i = 0; i < chunks.length; i += 1) {
-          const chunk = chunks[i];
-          const embedding = await getEmbedding(chunk);
-          const id = buildChunkId(title, documentId, i);
-
-          docs.push({
-            title,
-            fileUrl,
-            documentId,
-            chunk,
-            embedding
-          });
-
-          vectors.push({
-            id,
-            values: embedding,
-            metadata: {
-              text: chunk,
-              title,
-              documentId
-            }
-          });
-        }
-      } else {
-        parseWarning = "PDF uploaded, but no extractable text was found. Admin can still view and delete it.";
-      }
-    } catch (error) {
-      parseWarning = error.message;
-    }
-
-    if (!docs.length) {
-      docs.push({
+    await DocumentChunk.insertMany([
+      {
         title,
         fileUrl,
         documentId,
         chunk: "",
         embedding: []
-      });
-    }
-
-    await Promise.all([
-      DocumentChunk.insertMany(docs),
-      vectors.length ? upsertVectors(vectors) : Promise.resolve()
+      }
     ]);
 
+    setImmediate(() => {
+      processUploadedPdf({
+        pdfBuffer,
+        title,
+        fileUrl,
+        documentId
+      }).catch(async (error) => {
+        console.error("background upload processing failed:", error);
+        await DocumentChunk.deleteMany({ documentId }).catch(() => {});
+        await fs.unlink(req.file.path).catch(() => {});
+      });
+    });
+
     return res.status(201).json({
-      message: "PDF uploaded successfully",
-      chunks: chunks.length,
+      message: "PDF uploaded successfully. Indexing is running in the background.",
+      chunks: 0,
       fileUrl,
       title,
-      warning: parseWarning || undefined
+      warning: "PDF uploaded. Search indexing will finish shortly."
     });
   } catch (error) {
     return res.status(500).json({

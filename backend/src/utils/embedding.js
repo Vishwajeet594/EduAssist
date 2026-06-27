@@ -6,7 +6,7 @@ const getExtractor = async () => {
   if (!extractorPromise) {
     extractorPromise = pipeline(
       "feature-extraction",
-      process.env.EMBEDDING_MODEL || "Xenova/e5-large-v2"
+      process.env.EMBEDDING_MODEL || "Xenova/all-MiniLM-L6-v2"
     );
   }
 
@@ -26,9 +26,9 @@ const getEmbedding = async (text) => {
 
   const embedding = Array.from(output.data);
 
-  if (embedding.length !== 1024) {
+  if (embedding.length !== 384) {
     throw new Error(
-      `Expected 1024-dimensional embedding, received ${embedding.length}`
+      `Expected 384-dimensional embedding, received ${embedding.length}`
     );
   }
 

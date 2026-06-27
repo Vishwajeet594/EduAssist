@@ -24,7 +24,7 @@ function UploadPdf({ onUploaded, onBusyChange }) {
         formData
       );
 
-      setStatus("PDF uploaded and indexed successfully.");
+      setStatus("PDF uploaded. Indexing will finish in the background.");
       setFile(null);
       onUploaded?.();
 
