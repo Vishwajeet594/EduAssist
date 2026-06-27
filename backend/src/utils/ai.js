@@ -1,22 +1,23 @@
 const axios = require("axios");
 
-const generateAnswer = async (
-  question,
-  context
-) => {
-  try {
+const generateAnswer =
+  async (
+    question,
+    context
+  ) => {
 
     const response =
       await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
-          model: "deepseek/deepseek-chat",
+          model:
+            "deepseek/deepseek-chat",
 
           messages: [
             {
               role: "system",
               content:
-                "You are a college assistant. Answer only using the provided context."
+                "Answer only using the provided context."
             },
             {
               role: "user",
@@ -40,19 +41,10 @@ ${question}
         }
       );
 
-    return response.data.choices[0]
+    return response.data
+      .choices[0]
       .message.content;
-
-  } catch (error) {
-
-    console.log(
-      error.response?.data ||
-      error.message
-    );
-
-    return "AI service unavailable.";
-  }
-};
+  };
 
 module.exports = {
   generateAnswer

@@ -1,103 +1,213 @@
 const pdfParse = require("pdf-parse");
-const DocumentChunk = require("../models/DocumentChunk");
-const chunkText = require("../utils/chunkText");
 
-const { saveChat } = require("./chatController");
-const { generateAnswer } = require("../utils/ai");
+const DocumentChunk =
+  require("../models/DocumentChunk");
 
-const uploadPdf = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        message: "No file uploaded"
+const chunkText =
+  require("../utils/chunkText");
+
+const {
+  getEmbedding
+} = require(
+  "../utils/embedding"
+);
+
+const cosineSimilarity =
+  require(
+    "../utils/similarity"
+  );
+
+const {
+  generateAnswer
+} = require(
+    "../utils/ai"
+  );
+
+const {
+  saveChat
+} = require(
+  "./chatController"
+);
+
+const detectLanguage =
+  require(
+    "../utils/language"
+  );
+
+const {
+  translateToEnglish,
+  translateFromEnglish
+} = require(
+  "../utils/translator"
+);
+
+const uploadPdf =
+  async (req, res) => {
+
+    try {
+
+      if (!req.file) {
+
+        return res.status(400)
+          .json({
+            message:
+              "No file uploaded"
+          });
+
+      }
+
+      const data =
+        await pdfParse(
+          req.file.buffer
+        );
+
+      const chunks =
+        chunkText(
+          data.text
+        );
+
+      const docs = [];
+
+      for (
+        const chunk of chunks
+      ) {
+
+        const embedding =
+          await getEmbedding(
+            chunk
+          );
+
+        docs.push({
+          title:
+            req.file.originalname,
+          chunk,
+          embedding
+        });
+
+      }
+
+      await DocumentChunk
+        .insertMany(docs);
+
+      res.status(201).json({
+        message:
+          "PDF uploaded successfully",
+        chunks:
+          chunks.length
       });
+
+    } catch (error) {
+
+      res.status(500).json({
+        message:
+          error.message
+      });
+
     }
 
-    const data = await pdfParse(req.file.buffer);
+  };
 
-    const chunks = chunkText(data.text);
+const searchDocs =
+  async (req, res) => {
 
-    const docs = chunks.map((chunk) => ({
-      title: req.file.originalname,
-      chunk
-    }));
+    try {
 
-    await DocumentChunk.insertMany(docs);
+      let { query } =
+        req.body;
 
-    res.status(201).json({
-      message: "PDF uploaded successfully",
-      chunks: chunks.length
-    });
+      const userLanguage =
+        detectLanguage(query);
 
-  } catch (error) {
-    res.status(500).json({
-      message: error.message
-    });
-  }
-};
+      const englishQuery =
+        await translateToEnglish(
+          query
+        );
 
-const searchDocs = async (req, res) => {
-  try {
-    const { query } = req.body;
+      const queryEmbedding =
+        await getEmbedding(
+          englishQuery
+        );
 
-    const chunks = await DocumentChunk.find();
+      const docs =
+        await DocumentChunk
+          .find();
 
-    const results = chunks.filter((doc) =>
-      doc.chunk
-        .toLowerCase()
-        .includes(query.toLowerCase())
-    );
+      const ranked =
+        docs.map(
+          (doc) => ({
+            ...doc.toObject(),
 
-    if (results.length === 0) {
+            score:
+              cosineSimilarity(
+                queryEmbedding,
+                doc.embedding
+              )
+          })
+        );
+
+      ranked.sort(
+        (a, b) =>
+          b.score - a.score
+      );
+
+      const topChunks =
+        ranked.slice(0, 3);
+
+      const context =
+        topChunks
+          .map(
+            (d) => d.chunk
+          )
+          .join("\n\n");
+
+      let answer;
+
+      try {
+
+        answer =
+          await generateAnswer(
+            englishQuery,
+            context
+          );
+
+      } catch {
+
+        answer =
+          context;
+      }
+
+      if (
+        userLanguage !== "en"
+      ) {
+
+        answer =
+          await translateFromEnglish(
+            answer,
+            userLanguage
+          );
+
+      }
 
       await saveChat(
         req.user._id,
         query,
-        "No relevant information found."
+        answer
       );
 
-      return res.json({
-        answer: "No relevant information found."
+      res.json({
+        answer
       });
-    }
-
-    const context = results
-      .slice(0, 3)
-      .map((doc) => doc.chunk)
-      .join("\n\n");
-
-    let answer;
-
-    try {
-
-      answer = await generateAnswer(
-        query,
-        context
-      );
 
     } catch (error) {
 
-      console.log("AI Error:", error);
+      res.status(500).json({
+        message:
+          error.message
+      });
 
-      answer = context;
     }
 
-    await saveChat(
-      req.user._id,
-      query,
-      answer
-    );
-
-    res.json({
-      answer
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      message: error.message
-    });
-  }
-};
+  };
 
 module.exports = {
   uploadPdf,

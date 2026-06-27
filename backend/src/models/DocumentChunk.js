@@ -1,21 +1,25 @@
 const mongoose = require("mongoose");
 
-const documentChunkSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true
-    },
+const documentChunkSchema =
+  new mongoose.Schema(
+    {
+      title: {
+        type: String
+      },
 
-    chunk: {
-      type: String,
-      required: true
+      chunk: {
+        type: String
+      },
+
+      embedding: {
+        type: [Number],
+        default: []
+      }
+    },
+    {
+      timestamps: true
     }
-  },
-  {
-    timestamps: true
-  }
-);
+  );
 
 module.exports = mongoose.model(
   "DocumentChunk",

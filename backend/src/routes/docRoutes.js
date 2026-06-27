@@ -5,8 +5,12 @@ const protect = require("../middleware/auth");
 
 const {
   uploadPdf,
-  searchDocs
-} = require("../controllers/docController");
+  searchDocs,
+  getDocuments,
+  deleteDocument
+} = require(
+  "../controllers/docController"
+);
 
 const router = express.Router();
 
@@ -25,6 +29,17 @@ router.post(
   "/search",
   protect,
   searchDocs
+);
+router.get(
+  "/all",
+  protect,
+  getDocuments
+);
+
+router.delete(
+  "/:id",
+  protect,
+  deleteDocument
 );
 
 module.exports = router;
