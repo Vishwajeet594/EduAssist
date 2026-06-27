@@ -111,83 +111,87 @@ The platform:
 * Query analytics
 * Feedback collection
 
-
-# 🎯 Impact
-
-## For Students
-
-* Instant access to information.
-* Reduced time spent searching documents.
-* Support in preferred language.
-* Better understanding of institutional processes.
-* 24/7 availability.
-
-## For College Staff
-
-* Significant reduction in repetitive queries.
-* Less crowd at administrative offices.
-* Improved operational efficiency.
-* More time for handling complex issues.
-
-## For Institutions
-
-* Enhanced student experience.
-* Improved communication efficiency.
-* Centralized knowledge management.
-* Scalable and maintainable support system.
-
----
 # 🏗️ System Architecture
 
 ```text
-                    ┌─────────────────┐
-                    │ Student/User    │
-                    └────────┬────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │ React Frontend  │
-                    │ Chat Interface  │
-                    └────────┬────────┘
-                             │ API Request
-                             ▼
-                    ┌─────────────────┐
-                    │ Node.js Backend │
-                    │ Express Server  │
-                    └────────┬────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-          ▼                  ▼                  ▼
- ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
- │ JWT Auth     │   │ MongoDB      │   │ Language     │
- │ Login/Signup │   │ Chat History │   │ Detection    │
- └──────────────┘   └──────────────┘   └──────────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │ RAG Pipeline    │
-                    └────────┬────────┘
-                             │
-        Admin Upload PDFs    │ Search
-                             ▼
-                    ┌─────────────────┐
-                    │ Vector Database │
-                    │ Pinecone/Chroma │
-                    └────────┬────────┘
-                             │
-                     Relevant Chunks
-                             ▼
-                    ┌─────────────────┐
-                    │ Gemini API      │
-                    │ LLM Response    │
-                    └────────┬────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │ Final Answer    │
-                    │ User Language   │
-                    └─────────────────┘
+                                 ┌──────────────────────────────┐
+                                 │         Admin User           │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │      React Admin Dashboard   │
+                                 │  Upload PDFs / Manage Files  │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │     Node.js + Express API    │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │      PDF Processing          │
+                                 │ Parse → Chunk → Embed        │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │         Pinecone            │
+                                 │   Store Vector Embeddings   │
+                                 └──────────────┬───────────────┘
+                                                │
+════════════════════════════════════════════════╪════════════════════════════════════
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │        Student User          │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │   React Student Dashboard    │
+                                 │      Chat Interface          │
+                                 └──────────────┬───────────────┘
+                                                │
+                                            API Request
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │     Node.js + Express API    │
+                                 └──────────────┬───────────────┘
+                                                │
+                 ┌──────────────────────────────┼─────────────────────────────┐
+                 │                              │                             │
+                 ▼                              ▼                             ▼
+      ┌───────────────────┐          ┌───────────────────┐         ┌───────────────────┐
+      │ JWT Authentication│          │      MongoDB      │         │ Language Detection│
+      │ Login / Signup    │          │ Chat History      │         │ Auto Detect       │
+      └───────────────────┘          └───────────────────┘         └───────────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │        RAG Pipeline          │
+                                 │ Query → Embed → Retrieve     │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │         Pinecone            │
+                                 │ Retrieve Relevant Chunks    │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │     OpenRouter / Gemini      │
+                                 │ Answer Using PDF Context     │
+                                 └──────────────┬───────────────┘
+                                                │
+                                                ▼
+                                 ┌──────────────────────────────┐
+                                 │   Final Answer in User's     │
+                                 │         Language             │
+                                 └──────────────────────────────┘
 ```
 
 ---
@@ -245,5 +249,26 @@ Response:
 9. Response is returned in the student's preferred language.
 10. Conversation is stored in MongoDB for future reference and analytics.
 
-```
-```
+# 🎯 Impact
+
+## For Students
+
+* Instant access to information.
+* Reduced time spent searching documents.
+* Support in preferred language.
+* Better understanding of institutional processes.
+* 24/7 availability.
+
+## For College Staff
+
+* Significant reduction in repetitive queries.
+* Less crowd at administrative offices.
+* Improved operational efficiency.
+* More time for handling complex issues.
+
+## For Institutions
+
+* Enhanced student experience.
+* Improved communication efficiency.
+* Centralized knowledge management.
+* Scalable and maintainable support system.
