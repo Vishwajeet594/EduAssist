@@ -15,6 +15,16 @@ const chatSchema = new mongoose.Schema(
     answer: {
       type: String,
       required: true
+    },
+
+    sourceTitle: {
+      type: String,
+      default: ""
+    },
+
+    sourceFileUrl: {
+      type: String,
+      default: ""
     }
   },
   {

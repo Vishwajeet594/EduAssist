@@ -107,7 +107,14 @@ function ChatBox() {
         const latest = items[items.length - 1];
         setMessages([
           { sender: "user", text: latest.question, createdAt: latest.createdAt },
-          { sender: "bot", text: latest.answer, createdAt: latest.createdAt }
+          {
+            sender: "bot",
+            text: latest.answer,
+            sources: latest.sourceTitle
+              ? [{ title: latest.sourceTitle, fileUrl: latest.sourceFileUrl || "" }]
+              : [],
+            createdAt: latest.createdAt
+          }
         ]);
       }
     } catch (error) {
@@ -133,6 +140,9 @@ function ChatBox() {
       {
         sender: "bot",
         text: chat.answer,
+        sources: chat.sourceTitle
+          ? [{ title: chat.sourceTitle, fileUrl: chat.sourceFileUrl || "" }]
+          : [],
         createdAt: chat.createdAt
       }
     ]);

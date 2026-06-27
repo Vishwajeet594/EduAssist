@@ -3,7 +3,9 @@ const Chat = require("../models/Chat");
 const saveChat = async (
   userId,
   question,
-  answer
+  answer,
+  sourceTitle = "",
+  sourceFileUrl = ""
 ) => {
   try {
     console.log("==========");
@@ -14,7 +16,9 @@ const saveChat = async (
     const chat = await Chat.create({
       userId,
       question,
-      answer
+      answer,
+      sourceTitle,
+      sourceFileUrl
     });
 
     console.log("Chat Saved:");

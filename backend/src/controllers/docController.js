@@ -14,7 +14,7 @@ const {
   translateFromEnglish
 } = require("../utils/translator");
 
-const PINECONE_NAMESPACE = process.env.PINECONE_NAMESPACE || "campusiq";
+const PINECONE_NAMESPACE = process.env.PINECONE_NAMESPACE || "eduassist";
 const PDF_PARSE_VERSIONS = ["v2.0.550", "v1.10.100", "v1.10.88", "v1.9.426"];
 const PHONE_PATTERN = /(?:\+?\d[\d\s-().]{7,}\d)/;
 
@@ -219,7 +219,13 @@ const searchDocs = async (req, res) => {
         ? await DocumentChunk.findOne({ title: bestTitle }).sort({ createdAt: -1 }).select("fileUrl title documentId")
         : null;
 
-    await saveChat(req.user._id, query, answer);
+    await saveChat(
+      req.user._id,
+      query,
+      answer,
+      bestMatch?.metadata?.title || "",
+      bestDocument?.fileUrl || ""
+    );
 
     return res.json({
       answer,
