@@ -11,6 +11,7 @@ node_modules/
 # Logs
 logs
 *.log
+*.err
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -51,6 +52,12 @@ backend/node_modules/
 # Temporary files
 temp/
 tmp/
+*.tmp
+*.temp
 
 # Cache
 .cache/
+
+# Local editor/runtime artifacts
+*.swp
+*.swo

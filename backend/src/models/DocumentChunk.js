@@ -7,6 +7,14 @@ const documentChunkSchema =
         type: String
       },
 
+      fileUrl: {
+        type: String
+      },
+
+      documentId: {
+        type: String
+      },
+
       chunk: {
         type: String
       },

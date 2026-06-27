@@ -1,15 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
+
+dotenv.config();
 
 const connectDB = require("./config/db");
-
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
-const docRoutes =require("./routes/docRoutes");
-
-dotenv.config();
+const docRoutes = require("./routes/docRoutes");
+const adminRoutes =
+  require(
+    "./routes/adminRoutes"
+  );
 
 // Database Connection
 connectDB();
@@ -17,14 +21,29 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.length ? allowedOrigins : true,
+    credentials: true
+  })
+);
 app.use(express.json());
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/docs", docRoutes);
+app.use(
+  "/api/admin",
+  adminRoutes
+);
 
 // Test Route
 app.get("/", (req, res) => {
